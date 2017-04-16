@@ -48,6 +48,7 @@ public:
   void reset(void) {
     manipulated_keys_.clear();
     manipulated_fn_keys_.clear();
+    manipulated_shift_keys_.clear();
 
     modifier_flag_manager_.reset();
 
@@ -212,6 +213,33 @@ public:
 
       if (key_code) {
         manipulated_fn_keys_.add(device_id, to_key_code, *key_code);
+        to_key_code = *key_code;
+      }
+    }
+
+    // ----------------------------------------
+    // modify shift keys
+    if (!pressed) {
+      if (auto key_code = manipulated_shift_keys_.find(device_id, to_key_code)) {
+        manipulated_shift_keys_.remove(device_id, to_key_code);
+        to_key_code = *key_code;
+      }
+    } else {
+      boost::optional<key_code> key_code;
+
+      if (modifier_flag_manager_.is_pressed(modifier_flag::left_shift) ||
+          modifier_flag_manager_.is_pressed(modifier_flag::right_shift)) {
+        switch (to_key_code) {
+        case key_code::delete_or_backspace:
+          key_code = key_code::delete_forward;
+          break;
+        default:
+          break;
+        }
+      }
+
+      if (key_code) {
+        manipulated_shift_keys_.add(device_id, to_key_code, *key_code);
         to_key_code = *key_code;
       }
     }
@@ -422,6 +450,7 @@ private:
 
   manipulated_keys manipulated_keys_;
   manipulated_keys manipulated_fn_keys_;
+  manipulated_keys manipulated_shift_keys_;
 
   uint64_t last_timestamp_;
 };
